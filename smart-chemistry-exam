@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Smart Chemistry Exam — Intermediate</title>
+<style>
+:root{
+  --bg1:#071029; --bg2:#0b3a5b;
+  --card:#ffffff; --cardText:#072227;
+  --accent:#ffb703; --accent2:#fb8500;
+  --good:#28a745; --bad:#dc3545; --muted:#94a3b8;
+  --glass: rgba(255,255,255,0.04);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: "Inter", "Segoe UI", Tahoma, Arial, sans-serif;
+  background:
+    radial-gradient(900px 500px at 10% 10%, rgba(255,183,3,0.06), transparent 6%),
+    radial-gradient(700px 400px at 90% 90%, rgba(251,133,0,0.04), transparent 6%),
+    linear-gradient(180deg,var(--bg1),var(--bg2));
+  color:#fff;
+  padding:28px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* App container */
+.app {
+  width:100%;
+  max-width:1100px;
+  border-radius:16px;
+  overflow:hidden;
+  display:grid;
+  grid-template-columns: 1fr 380px;
+  gap:0;
+  box-shadow: 0 14px 50px rgba(2,6,23,0.6);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Left: quiz area */
+.left {
+  padding:28px;
+  min-height:560px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+}
+
+/* Right: stats & controls */
+.right {
+  padding:22px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));
+  border-left: 1px solid rgba(255,255,255,0.02);
+}
+
+/* Header */
+.header {
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:14px;
+}
+.logo {
+  width:64px;height:64px;border-radius:12px;
+  background: linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;color:#072227;font-size:22px;
+  box-shadow: 0 8px 22px rgba(251,133,0,0.18);
+}
+.title {
+  font-size:20px;color:#fff;line-height:1;
+}
+.subtitle {font-size:13px;color:var(--muted);margin-top:4px}
+
+/* Meta row */
+.meta {
+  display:flex;justify-content:space-between;align-items:center;margin:12px 0 18px;
+}
+.qcount {font-weight:700}
+.timer {
+  background:var(--glass);padding:8px 12px;border-radius:10px;font-weight:700;color:var(--accent);
+  display:inline-flex;gap:8px;align-items:center;font-size:14px;
+}
+
+/* Question card */
+.card {
+  background: linear-gradient(180deg,#ffffff, #fbfbfb);
+  color:var(--cardText);
+  border-radius:12px;padding:18px;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+}
+.qtext {font-size:18px;margin-bottom:12px;direction:ltr}
+
+/* Options grid */
+.options {display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+@media(max-width:980px){ .app{grid-template-columns:1fr} .right{order:2} .left{order:1} .options{grid-template-columns:1fr} }
+
+.btn {
+  padding:12px;border-radius:10px;border:1px solid #e6e6e6;background:#fff;cursor:pointer;
+  font-weight:700;box-shadow:0 2px 6px rgba(2,6,23,0.04);
+  transition:transform .06s ease, box-shadow .06s;
+  text-align:center;
+}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:0.75;cursor:not-allowed}
+.btn.correct{background:var(--good);color:#fff;border-color:var(--good)}
+.btn.wrong{background:var(--bad);color:#fff;border-color:var(--bad)}
+.btn:hover{box-shadow:0 10px 26px rgba(2,6,23,0.08)}
+
+/* Progress */
+.progressWrap{margin-top:14px}
+.progressBar{height:12px;background:#e9eef6;border-radius:999px;overflow:hidden}
+.progressFill{height:12px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%}
+
+/* Controls */
+.controls{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.primary{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#072227;border:none;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:800}
+.ghost{background:transparent;border:1px solid rgba(11,27,43,0.08);color:#fff;padding:10px 12px;border-radius:10px;cursor:pointer}
+
+/* Right panels */
+.panel {background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:14px;border-radius:12px;margin-bottom:12px}
+.statRow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,0.03)}
+.statRow:last-child{border-bottom:none}
+.small{font-size:13px;color:var(--muted)}
+.resultBox{background:#fff;color:var(--cardText);padding:12px;border-radius:10px;text-align:center;font-weight:800}
+.weak{color:var(--bad);font-weight:800}
+
+/* Footer */
+.footer{font-size:12px;color:var(--muted);text-align:center;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="app" role="application" aria-label="Smart Chemistry Exam">
+  <!-- Left: Quiz -->
+  <section class="left" aria-labelledby="examTitle">
+    <div class="header">
+      <div class="logo" aria-hidden="true">CH</div>
+      <div>
+        <div id="examTitle" class="title">Smart Chemistry Exam — Intermediate</div>
+        <div class="subtitle">Questions sourced only from your provided course files</div>
+      </div>
+    </div>
+
+    <div class="meta">
+      <div class="qcount" id="qcount">Q 0 / 0</div>
+      <div class="timer" id="timer" aria-live="polite">Time: 15:00</div>
+    </div>
+
+    <div class="card" id="questionCard" role="region" aria-live="polite">
+      <div class="qtext" id="qtext">Loading...</div>
+
+      <div class="options" id="options" role="list"></div>
+
+      <div class="progressWrap">
+        <div class="progressBar" aria-hidden="true"><div class="progressFill" id="progressFill"></div></div>
+      </div>
+
+      <div class="controls" style="margin-top:16px">
+        <button class="primary" id="nextBtn">Skip</button>
+        <button class="ghost" id="pauseBtn">Pause</button>
+        <button class="ghost" id="saveBtn">Save</button>
+        <button class="ghost" id="restartBtn">Restart</button>
+      </div>
+
+      <div style="margin-top:10px;font-size:13px;color:var(--muted)">Question types: Multiple choice & True/False — Intermediate level</div>
+    </div>
+  </section>
+
+  <!-- Right: Stats -->
+  <aside class="right" aria-labelledby="statsTitle">
+    <div class="panel">
+      <div id="statsTitle" style="font-weight:800;margin-bottom:8px">Statistics</div>
+      <div class="statRow"><div class="small">Current Score</div><div id="score" style="font-weight:800">0</div></div>
+      <div class="statRow"><div class="small">Remaining Questions</div><div id="remaining">0</div></div>
+      <div class="statRow"><div class="small">Overall %</div><div id="percent">0%</div></div>
+    </div>
+
+    <div class="panel">
+      <div style="font-weight:800;margin-bottom:8px">Performance by Category</div>
+      <div id="categoryStats"></div>
+    </div>
+
+    <div class="panel">
+      <div style="font-weight:800;margin-bottom:8px">Final Result</div>
+      <div class="resultBox" id="finalBox">Not started</div>
+    </div>
+
+    <div class="footer">You can edit the question bank inside the code. Progress is saved locally (localStorage).</div>
+  </aside>
+</div>
+
+<script>
+/* ============================
+   QUESTION BANK (English)
+   - Questions are derived from the course files you provided:
+     topics include atoms, mole concept, bonds, stoichiometry,
+     solutions, measurement, thermodynamics, and equilibrium.
+   - Types: "mcq" (multiple choice) and "tf" (true/false).
+   - Each mcq: {type:"mcq", q:"text", a:[opts], c:correctIndex, cat:"category"}
+   - Each tf:  {type:"tf", q:"text", ans:true/false, cat:"category"}
+   ============================ */
+const QUESTION_BANK = [
+  // Multiple Choice (intermediate)
+  {type:"mcq", q:"What is the definition of a mole in chemistry?", a:["A specific number of entities equal to 6.022×10^23","One gram of any element","The mass of one atom","The volume of gas at STP"], c:0, cat:"Mole & Molar Mass"},
+  {type:"mcq", q:"Approximately what is Avogadro's number?", a:["6.022×10^23","3.00×10^8","9.81","1.67×10^-27"], c:0, cat:"Mole & Molar Mass"},
+  {type:"mcq", q:"Which SI base unit measures mass?", a:["kilogram","gram","mole","ampere"], c:0, cat:"Measurement"},
+  {type:"mcq", q:"Which statement best describes an ionic bond?", a:["Electron transfer from a metal to a nonmetal","Equal sharing of electrons","Hydrogen bonding between molecules","Delocalized electrons in a metal lattice"], c:0, cat:"Chemical Bonding"},
+  {type:"mcq", q:"Complete combustion of a hydrocarbon typically produces:", a:["CO2 and H2O","O2 and N2","H2 and O2","C and H"], c:0, cat:"Chemical Reactions"},
+  {type:"mcq", q:"The law of conservation of mass states:", a:["Mass is neither created nor destroyed in a chemical reaction","Energy is always conserved","Mass doubles in reactions","Atoms change identity"], c:0, cat:"Fundamental Laws"},
+  {type:"mcq", q:"Which part of the atom primarily determines chemical behavior?", a:["Electrons (especially valence electrons)","Neutrons","Protons only","Nucleus size"], c:0, cat:"Atomic Structure"},
+  {type:"mcq", q:"How do you compute the molar mass of a compound?", a:["Sum the atomic masses of all atoms in the formula","Multiply atomic masses","Divide by Avogadro's number","Use density"], c:0, cat:"Mole & Molar Mass"},
+  {type:"mcq", q:"What is the difference between mass and weight?", a:["Weight is a force depending on gravity; mass is amount of matter","Mass depends on gravity; weight is amount of matter","They are identical","Weight is measured in moles"], c:0, cat:"Measurement"},
+  {type:"mcq", q:"When NaCl dissolves in water, what happens at the molecular level?", a:["Ionic lattice breaks and ions are solvated by water molecules","Covalent bonds form","Water decomposes","New atoms are created"], c:0, cat:"Solutions"},
+  {type:"mcq", q:"Rutherford's gold foil experiment demonstrated:", a:["A small, dense, positively charged nucleus","Atoms are indivisible","Electrons are in the nucleus","Matter is continuous"], c:0, cat:"Atomic Structure"},
+  {type:"mcq", q:"Why is the atomic mass of carbon listed as 12.01 on the periodic table?", a:["It is the weighted average of naturally occurring isotopes","Because every carbon atom has mass 12 exactly","It is the mass of 1 mole","It is the mass of 12 protons only"], c:0, cat:"Isotopes & Atomic Mass"},
+  {type:"mcq", q:"At chemical equilibrium:", a:["Forward and reverse reaction rates are equal","No molecules react","Products are all consumed","Only reactants remain"], c:0, cat:"Equilibrium"},
+  {type:"mcq", q:"Le Chatelier's principle predicts how equilibrium shifts when:", a:["Concentration, pressure, or temperature change","Only when catalysts are added","Only for solids","It never shifts"], c:0, cat:"Equilibrium"},
+  {type:"mcq", q:"Adding a catalyst to a reaction at equilibrium will:", a:["Speed up both forward and reverse reactions equally","Increase product yield permanently","Change the equilibrium constant","Prevent the reaction"], c:0, cat:"Equilibrium"},
+  {type:"mcq", q:"What is the SI unit of pressure?", a:["Pascal (Pa)","atm","bar","psi"], c:0, cat:"Measurement"},
+  {type:"mcq", q:"When determining an empirical formula from percent composition, the first step is to:", a:["Assume 100 g sample and convert mass % to moles","Divide by Avogadro's number","Use the ideal gas law","Measure density"], c:0, cat:"Analytical Methods"},
+  {type:"mcq", q:"Why does a solution typically have a higher boiling point than the pure solvent?", a:["Solute particles lower solvent vapor pressure (colligative effect)","Because solute reacts chemically","Because density increases only","Because pH changes"], c:0, cat:"Solutions"},
+  {type:"mcq", q:"Density is defined as:", a:["Mass per unit volume","Weight per mole","Number of particles","Volume per mass"], c:0, cat:"Measurement"},
+  {type:"mcq", q:"In the combustion reaction 2H2 + O2 → 2H2O, the mole ratio H2:O2 is:", a:["2 : 1","1 : 1","1 : 2","3 : 2"], c:0, cat:"Stoichiometry"},
+
+  // True / False (intermediate)
+  {type:"tf", q:"Isotopes have the same atomic number but different numbers of neutrons.", ans:true, cat:"Isotopes & Atomic Mass"},
+  {type:"tf", q:"The equilibrium constant K changes with temperature.", ans:true, cat:"Equilibrium"},
+  {type:"tf", q:"A mole always equals 1 gram of any element.", ans:false, cat:"Mole & Molar Mass"},
+  {type:"tf", q:"A covalent bond typically forms between two metals.", ans:false, cat:"Chemical Bonding"},
+  {type:"tf", q:"The law of conservation of mass implies the number of atoms of each element is the same before and after a reaction.", ans:true, cat:"Fundamental Laws"},
+  {type:"tf", q:"The atomic mass shown in the periodic table is the mass of a single atom of that exact mass only.", ans:false, cat:"Isotopes & Atomic Mass"},
+  {type:"tf", q:"When an ionic solid dissolves in water, ion-dipole interactions form between ions and water molecules.", ans:true, cat:"Solutions"},
+  {type:"tf", q:"Enthalpy change (ΔH) alone determines whether a process is spontaneous.", ans:false, cat:"Thermodynamics"},
+  {type:"tf", q:"Significant figures are important to express measurement uncertainty and correct precision.", ans:true, cat:"Measurement"},
+  {type:"tf", q:"Increasing pressure always shifts a gaseous equilibrium toward products.", ans:false, cat:"Equilibrium"}
+];
+
+/* ============================
+   SETTINGS
+   ============================ */
+const TOTAL = QUESTION_BANK.length; // use all questions
+const START_TIME_SEC = 15 * 60; // 15 minutes
+let questions = []; // shuffled copy
+let idx = 0, score = 0, timeLeft = START_TIME_SEC;
+let stats = {}; // {category: {c:0, t:0}}
+let timer = null;
+
+/* DOM elements */
+const qcountEl = document.getElementById('qcount');
+const timerEl = document.getElementById('timer');
+const qtextEl = document.getElementById('qtext');
+const optionsEl = document.getElementById('options');
+const progressFill = document.getElementById('progressFill');
+const scoreEl = document.getElementById('score');
+const remainingEl = document.getElementById('remaining');
+const percentEl = document.getElementById('percent');
+const categoryStatsEl = document.getElementById('categoryStats');
+const finalBox = document.getElementById('finalBox');
+
+const nextBtn = document.getElementById('nextBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const saveBtn = document.getElementById('saveBtn');
+const restartBtn = document.getElementById('restartBtn');
+
+/* Helpers */
+function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } }
+function formatTime(s){ const m=Math.floor(s/60); const sec=s%60; return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`; }
+
+/* Initialize quiz */
+function init(){
+  questions = QUESTION_BANK.slice();
+  shuffle(questions);
+  // init stats categories
+  stats = {};
+  questions.forEach(q => { if(!stats[q.cat]) stats[q.cat] = {c:0,t:0}; });
+  // try restore
+  const restored = restore();
+  if(!restored){
+    idx = 0; score = 0; timeLeft = START_TIME_SEC;
+  }
+  renderQuestion();
+  startTimer();
+}
+
+/* Render current question */
+function renderQuestion(){
+  if(idx >= questions.length){ finish(); return; }
+  const q = questions[idx];
+  qcountEl.innerText = `Q ${idx+1} / ${questions.length}`;
+  timerEl.innerText = `Time: ${formatTime(timeLeft)}`;
+  qtextEl.innerText = q.q;
+  optionsEl.innerHTML = '';
+  // create option buttons
+  if(q.type === 'mcq'){
+    q.a.forEach((opt, i) => {
+      const b = document.createElement('button');
+      b.className = 'btn';
+      b.innerText = opt;
+      b.onclick = () => handleMCQ(b, i, q);
+      optionsEl.appendChild(b);
+    });
+  } else if(q.type === 'tf'){
+    const trueBtn = document.createElement('button');
+    trueBtn.className = 'btn';
+    trueBtn.innerText = 'True';
+    trueBtn.onclick = () => handleTF(trueBtn, true, q);
+    const falseBtn = document.createElement('button');
+    falseBtn.className = 'btn';
+    falseBtn.innerText = 'False';
+    falseBtn.onclick = () => handleTF(falseBtn, false, q);
+    optionsEl.appendChild(trueBtn);
+    optionsEl.appendChild(falseBtn);
+  }
+  // update progress bar
+  const pct = Math.round((idx / questions.length) * 100);
+  progressFill.style.width = pct + '%';
+  updateSidebar();
+}
+
+/* Disable option buttons */
+function disableOptions(){
+  const btns = optionsEl.querySelectorAll('button');
+  btns.forEach(b => b.disabled = true);
+}
+
+/* Handle MCQ answer */
+function handleMCQ(btn, choice, q){
+  disableOptions();
+  const btns = Array.from(optionsEl.querySelectorAll('button'));
+  const correct = q.c;
+  // update stats
+  stats[q.cat].t = (stats[q.cat].t || 0) + 1;
+  if(choice === correct){
+    btn.classList.add('correct');
+    score++;
+    stats[q.cat].c = (stats[q.cat].c || 0) + 1;
+  } else {
+    btn.classList.add('wrong');
+    if(btns[correct]) btns[correct].classList.add('correct');
+  }
+  updateSidebar();
+  setTimeout(()=>{ idx++; save(); renderQuestion(); }, 700);
+}
+
+/* Handle True/False answer */
+function handleTF(btn, chosenBool, q){
+  disableOptions();
+  const btns = Array.from(optionsEl.querySelectorAll('button'));
+  const correctBool = !!q.ans;
+  stats[q.cat].t = (stats[q.cat].t || 0) + 1;
+  if(chosenBool === correctBool){
+    btn.classList.add('correct');
+    score++;
+    stats[q.cat].c = (stats[q.cat].c || 0) + 1;
+  } else {
+    btn.classList.add('wrong');
+    const correctIdx = correctBool ? 0 : 1;
+    if(btns[correctIdx]) btns[correctIdx].classList.add('correct');
+  }
+  updateSidebar();
+  setTimeout(()=>{ idx++; save(); renderQuestion(); }, 700);
+}
+
+/* Timer */
+function startTimer(){
+  if(timer) clearInterval(timer);
+  timer = setInterval(()=>{
+    timeLeft--;
+    timerEl.innerText = `Time: ${formatTime(timeLeft)}`;
+    if(timeLeft <= 0){ finish(); }
+  },1000);
+}
+function togglePause(){
+  if(timer){
+    clearInterval(timer); timer = null; pauseBtn.innerText = 'Resume';
+  } else {
+    startTimer(); pauseBtn.innerText = 'Pause';
+  }
+}
+
+/* Finish quiz */
+function finish(){
+  if(timer) clearInterval(timer);
+  const percent = (score / questions.length * 100).toFixed(1);
+  finalBox.innerText = `Score: ${score} / ${questions.length} — ${percent}%`;
+  // weak categories (<60%)
+  const weak = [];
+  for(const k in stats){
+    const s = stats[k];
+    const p = s.t ? (s.c / s.t * 100) : 0;
+    if(p < 60) weak.push(`${k} (${Math.round(p)}%)`);
+  }
+  if(weak.length){
+    finalBox.innerHTML += `<div style="margin-top:8px;color:#b91c1c;font-weight:800">Weak areas: ${weak.join(', ')}</div>`;
+  } else {
+    finalBox.innerHTML += `<div style="margin-top:8px;color:#16a34a;font-weight:800">Good performance — no clear weak areas</div>`;
+  }
+  qtextEl.innerText = 'The exam is finished. You may restart or save your result.';
+  optionsEl.innerHTML = '';
+  progressFill.style.width = '100%';
+  updateSidebar(true);
+  localStorage.removeItem('chem_exam_state');
+}
+
+/* Save / Restore localStorage */
+function save(){
+  try{
+    const state = {questions, idx, score, timeLeft, stats};
+    localStorage.setItem('chem_exam_state', JSON.stringify(state));
+  }catch(e){}
+}
+function restore(){
+  try{
+    const raw = localStorage.getItem('chem_exam_state');
+    if(!raw) return false;
+    const st = JSON.parse(raw);
+    if(st && st.questions && st.questions.length){
+      questions = st.questions;
+      idx = st.idx || 0;
+      score = st.score || 0;
+      timeLeft = st.timeLeft || START_TIME_SEC;
+      stats = st.stats || stats;
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+/* Update sidebar stats */
+function updateSidebar(final=false){
+  scoreEl.innerText = score;
+  remainingEl.innerText = Math.max(0, questions.length - idx);
+  const pct = questions.length ? Math.round((score / questions.length) * 100) : 0;
+  percentEl.innerText = pct + '%';
+  categoryStatsEl.innerHTML = '';
+  for(const k in stats){
+    const s = stats[k];
+    const p = s.t ? Math.round((s.c / s.t) * 100) : 0;
+    const row = document.createElement('div');
+    row.className = 'statRow';
+    row.innerHTML = `<div style="font-weight:700">${k}</div><div>${s.c}/${s.t} (${p}%)</div>`;
+    categoryStatsEl.appendChild(row);
+  }
+  if(final){
+    finalBox.inne
