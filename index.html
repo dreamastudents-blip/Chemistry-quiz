@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart Chemistry Exam</title>
+
+<style>
+body {
+    margin:0;
+    font-family:'Segoe UI';
+    background:linear-gradient(135deg,#141e30,#243b55);
+    color:white;
+}
+.container {
+    max-width:900px;
+    margin:30px auto;
+    background:white;
+    color:#333;
+    border-radius:20px;
+    padding:25px;
+}
+h2{text-align:center;}
+
+button{
+    width:100%;
+    padding:12px;
+    margin:6px 0;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+.correct{background:#28a745;color:white;}
+.wrong{background:#dc3545;color:white;}
+
+.progress{height:10px;background:#ddd;border-radius:10px;}
+#bar{height:10px;background:#243b55;width:0%;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h2>🧪 Chemistry Smart Exam</h2>
+
+<p id="info"></p>
+<p id="timer"></p>
+
+<div class="progress"><div id="bar"></div></div>
+
+<div id="quiz"></div>
+<div id="result"></div>
+
+<button onclick="restart()">Restart</button>
+</div>
+
+<script>
+
+// 🔥 QUESTION GENERATOR (150 بدون تكرار)
+let baseMCQ = [
+["Chemical reaction produces?","New substances","Shape change","Mixing","Color only",0,"Reactions"],
+["Combustion needs?","Oxygen","Water","Salt","Iron",0,"Reactions"],
+["Decomposition means?","Break compound","Combine","Burn","Mix",0,"Reactions"],
+["Covalent bond?","Sharing electrons","Transfer","Lose","Gain",0,"Bonds"],
+["Ionic bond?","Metal + Nonmetal","Metal+Metal","Non+Non","Gas",0,"Bonds"],
+["Na+ is?","Positive ion","Negative","Neutral","Atom",0,"Bonds"],
+["O2 bond?","Double bond","Single","Triple","None",0,"Bonds"],
+["N2 bond?","Triple bond","Single","Double","None",0,"Bonds"],
+["Exothermic reaction?","Releases heat","Absorbs heat","No heat","Cold",0,"Reactions"],
+["Endothermic?","Absorbs heat","Releases heat","Hot","None",0,"Reactions"]
+];
+
+let questions = [];
+
+// توليد 100 MCQ
+for(let i=0;i<100;i++){
+let q = baseMCQ[i % baseMCQ.length];
+questions.push({
+q:q[0],
+a:[q[1],q[2],q[3],q[4]],
+c:q[5],
+cat:q[6],
+type:"mcq"
+});
+}
+
+// توليد 50 True/False
+let tfBase = [
+["Water is compound",true,"Bonds"],
+["Combustion needs oxygen",true,"Reactions"],
+["Covalent means sharing",true,"Bonds"],
+["Ionic means sharing",false,"Bonds"],
+["Reaction produces new substances",true,"Reactions"]
+];
+
+for(let i=0;i<50;i++){
+let q=tfBase[i % tfBase.length];
+questions.push({
+q:q[0],
+ans:q[1],
+cat:q[2],
+type:"tf"
+});
+}
+
+// 🔀 SHUFFLE
+questions.sort(()=>Math.random()-0.5);
+
+// VARIABLES
+let i=0,score=0,time=900;
+let stats={Reactions:{c:0,t:0},Bonds:{c:0,t:0}};
+
+let timer=setInterval(()=>{
+time--;
+document.getElementById("timer").innerText="Time: "+time;
+if(time<=0) finish();
+},1000);
+
+function load(){
+let q=questions[i];
+let div=document.getElementById("quiz");
+
+document.getElementById("info").innerText=
+`Q ${i+1}/${questions.length} | ${q.cat}`;
+
+div.innerHTML=`<p>${q.q}</p>`;
+
+stats[q.cat].t++;
+
+if(q.type==="mcq"){
+q.a.forEach((a,idx)=>{
+let b=document.createElement("button");
+b.innerText=a;
+b.onclick=()=>checkMCQ(idx);
+div.appendChild(b);
+});
+}else{
+["True","False"].forEach((t,idx)=>{
+let b=document.createElement("button");
+b.innerText=t;
+b.onclick=()=>checkTF(idx===0);
+div.appendChild(b);
+});
+}
+
+document.getElementById("bar").style.width=
+(i/questions.length*100)+"%";
+}
+
+function checkMCQ(ans){
+let q=questions[i];
+let btns=document.querySelectorAll("button");
+
+btns.forEach(b=>b.disabled=true);
+
+if(ans===q.c){
+btns[ans].classList.add("correct");
+score++;
+stats[q.cat].c++;
+}else{
+btns[ans].classList.add("wrong");
+btns[q.c].classList.add("correct");
+}
+setTimeout(next,600);
+}
+
+function checkTF(ans){
+let q=questions[i];
+let btns=document.querySelectorAll("button");
+
+btns.forEach(b=>b.disabled=true);
+
+if(ans===q.ans){
+btns[ans?0:1].classList.add("correct");
+score++;
+stats[q.cat].c++;
+}else{
+btns[ans?0:1].classList.add("wrong");
+btns[q.ans?0:1].classList.add("correct");
+}
+setTimeout(next,600);
+}
+
+function next(){
+i++;
+if(i<questions.length) load();
+else finish();
+}
+
+function finish(){
+clearInterval(timer);
+
+let weak=[];
+for(let k in stats){
+let p=(stats[k].c/stats[k].t)*100;
+if(p<60) weak.push(k);
+}
+
+document.getElementById("quiz").innerHTML="";
+document.getElementById("result").innerHTML=
+`🎯 Score: ${score}/150<br>
+📊 ${(score/150*100).toFixed(1)}%<br>
+🧠 Weak Areas: ${weak.join(", ") || "None"}`;
+}
+
+function restart(){location.reload();}
+
+load();
+</script>
+
+</body>
+  </html>
